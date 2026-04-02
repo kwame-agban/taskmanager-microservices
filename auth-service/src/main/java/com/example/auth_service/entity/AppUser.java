@@ -1,10 +1,8 @@
 package com.example.auth_service.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
+@Entity
 public class AppUser {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
