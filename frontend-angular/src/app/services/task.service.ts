@@ -1,5 +1,6 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 export interface Task {
   id: number;
@@ -9,40 +10,44 @@ export interface Task {
   ownerUsername: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
-export class TaskService {
-  private tasks: Task[] = [];
-  private idCounter = 1;
+export interface TaskRequest {
+  title: string;
+  description: string;
+}
 
-  getTasks(): Observable<Task[]> {
-    return of(this.tasks);
+@Injectable({ providedIn: 'root' })
+export class TaskService {
+  private http = inject(HttpClient);
+  private readonly apiUrl = 'http://localhost:8082/api/tasks';
+
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token') || '';
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
   }
 
-  createTask(task: { title: string; description: string }): Observable<Task> {
-    const newTask: Task = {
-      id: this.idCounter++,
-      title: task.title,
-      description: task.description,
-      completed: false,
-      ownerUsername: 'user.nom'
-    };
+  getTasks(): Observable<Task[]> {
+    return this.http.get<Task[]>(this.apiUrl, {
+      headers: this.getAuthHeaders()
+    });
+  }
 
-    this.tasks.push(newTask);
-    return of(newTask);
+  createTask(payload: TaskRequest): Observable<Task> {
+    return this.http.post<Task>(this.apiUrl, payload, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   completeTask(id: number): Observable<Task> {
-    const task = this.tasks.find(t => t.id === id);
-    if (task) {
-      task.completed = true;
-    }
-    return of(task!);
+    return this.http.put<Task>(`${this.apiUrl}/${id}/complete`, {}, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   deleteTask(id: number): Observable<void> {
-    this.tasks = this.tasks.filter(t => t.id !== id);
-    return of(void 0);
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, {
+      headers: this.getAuthHeaders()
+    });
   }
 }
