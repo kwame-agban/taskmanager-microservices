@@ -1,8 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { Task, TaskService } from '../../services/task.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-tasks',
@@ -14,6 +15,7 @@ import { Task, TaskService } from '../../services/task.service';
 export class Tasks implements OnInit {
   private readonly taskService = inject(TaskService);
   private readonly authService = inject(AuthService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   tasks: Task[] = [];
   title = '';
@@ -24,67 +26,53 @@ export class Tasks implements OnInit {
   }
 
   loadTasks(): void {
-    this.taskService.getTasks().subscribe({
-      next: (tasks: Task[]) => {
-        //this.tasks = tasks;
-        this.tasks = [...tasks];
-      },
-      error: (err: unknown) => {
-        console.error('Erreur chargement tâches', err);
-      }
+    this.handle(this.taskService.getTasks(), (tasks: Task[]) => {
+      this.tasks = tasks;
     });
   }
 
   createTask(): void {
-    const title = this.title.trim();
-    const description = this.description.trim();
-
-    if (!title) {
-      return;
-    }
-
-    const payload = { title, description };
-
-    this.taskService.createTask(payload).subscribe({
-      next: (newTask) => {
-          this.tasks = [...this.tasks, newTask]; // affichage immédiat
-
-          setTimeout(() => {
-            this.loadTasks(); // sync backend
-          }, 200);
-
-          this.title = '';
-          this.description = '';
-      },
-      error: (err: unknown) => {
-        console.error('Erreur création tâche', err);
+    const payload = { title: this.title, description: this.description };
+    this.handle(
+      this.taskService.createTask(payload),
+      (newTask) => {
+        this.tasks = [...this.tasks, newTask];
+        this.title = '';
+        this.description = '';
       }
-    });
+    );
   }
 
   completeTask(id: number): void {
-    this.taskService.completeTask(id).subscribe({
-      next: () => {
-        this.loadTasks();
-      },
-      error: (err: unknown) => {
-        console.error('Erreur complétion tâche', err);
+    this.handle(
+      this.taskService.completeTask(id),
+      (updatedTask) => {
+        this.tasks = this.tasks.map(t =>
+          t.id === id ? updatedTask : t
+        );
       }
-    });
+    );
   }
-
   deleteTask(id: number): void {
-    this.taskService.deleteTask(id).subscribe({
-      next: () => {
-        this.loadTasks();
-      },
-      error: (err: unknown) => {
-        console.error('Erreur suppression tâche', err);
+    this.handle(
+      this.taskService.deleteTask(id),
+      () => {
+        this.tasks = this.tasks.filter(t => t.id !== id);
       }
-    });
+    );
   }
-
   logout(): void {
     this.authService.logout();
   }
+
+  private handle<T>(obs: Observable<T>, nextFn: (value: T) => void): void {
+    obs.subscribe({
+      next: (value) => {
+        nextFn(value);
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
 }
