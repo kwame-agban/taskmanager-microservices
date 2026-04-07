@@ -26,7 +26,8 @@ export class Tasks implements OnInit {
   loadTasks(): void {
     this.taskService.getTasks().subscribe({
       next: (tasks: Task[]) => {
-        this.tasks = tasks;
+        //this.tasks = tasks;
+        this.tasks = [...tasks];
       },
       error: (err: unknown) => {
         console.error('Erreur chargement tâches', err);
@@ -35,18 +36,25 @@ export class Tasks implements OnInit {
   }
 
   createTask(): void {
-    if (!this.title.trim()) {
+    const title = this.title.trim();
+    const description = this.description.trim();
+
+    if (!title) {
       return;
     }
 
-    this.taskService.createTask({
-      title: this.title,
-      description: this.description
-    }).subscribe({
-      next: () => {
-        this.title = '';
-        this.description = '';
-        this.loadTasks();
+    const payload = { title, description };
+
+    this.taskService.createTask(payload).subscribe({
+      next: (newTask) => {
+          this.tasks = [...this.tasks, newTask]; // affichage immédiat
+
+          setTimeout(() => {
+            this.loadTasks(); // sync backend
+          }, 200);
+
+          this.title = '';
+          this.description = '';
       },
       error: (err: unknown) => {
         console.error('Erreur création tâche', err);
