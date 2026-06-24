@@ -1,0 +1,22 @@
+http://localhost:8081/h2-console/
+
+// //
+
+SELECT * FROM APP_USER;
+
+// //
+
+Pour retrouver ou réinitialiser le mot de passe
+
+Le plus simple est de remplacer le hash actuel par celui d'un mot de passe connu.
+
+Par exemple, exécute :
+
+UPDATE APP_USER
+SET PASSWORD = '$2a$10$JsZIh55mRTIwF31/6Zu4Q.idlNw8bgciHIxpT5VEDWmMN1Llubwwm'
+WHERE USERNAME = 'user.nom';
+
+Puis essaie :
+
+Login : user.nom
+Mot de passe : password
