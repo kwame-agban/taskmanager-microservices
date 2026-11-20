@@ -16,11 +16,33 @@
       <p>{{ task.description }}</p>
       <p><strong>Statut :</strong> {{ task.completed ? 'Terminée' : 'En cours' }}</p>
 
-      <div class="actions">
+      <p class="delete-error" *ngIf="deleteErrorId === task.id" role="alert">
+        Échec de la suppression de la tâche. Veuillez réessayer.
+      </p>
+
+      <div class="actions" *ngIf="pendingDelete?.id !== task.id">
         <button *ngIf="!task.completed" (click)="completeTask(task.id)">
           Terminer
         </button>
-        <button (click)="deleteTask(task.id)">Supprimer</button>
+        <button class="btn-danger" (click)="requestDelete(task.id)">Supprimer</button>
+      </div>
+
+      <div class="confirm-box" *ngIf="pendingDelete?.id === task.id" role="alert">
+        <ng-container *ngIf="pendingDelete?.step === 1">
+          <p>Voulez-vous supprimer la tâche « {{ task.title }} » ?</p>
+          <div class="actions">
+            <button class="btn-danger" (click)="confirmDelete(task.id)">Oui, supprimer</button>
+            <button (click)="cancelDelete()">Annuler</button>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="pendingDelete?.step === 2">
+          <p><strong>Cette action est irréversible.</strong> Confirmer définitivement la suppression ?</p>
+          <div class="actions">
+            <button class="btn-danger" (click)="confirmDelete(task.id)">Supprimer définitivement</button>
+            <button (click)="cancelDelete()">Annuler</button>
+          </div>
+        </ng-container>
       </div>
     </div>
   </div>
